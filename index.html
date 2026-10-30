@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spøgelses-Jeopardy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Spectral:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EFE6D2; --ink:#2A1533; --muted:#6B5A70;
+  --stone:#3B1F47; --stone-edge:#24122C; --stone-ink:#F3C969;
+  --used:#D9CDB3; --used-ink:#B3A588;
+  --panel:#FFF8E8; --pumpkin:#E8742A; --blood:#A3242A; --moss:#5F7030;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#170C1E; --ink:#EFE6D2; --muted:#B9A8BF;
+    --stone:#3B1F47; --stone-edge:#0E0613; --stone-ink:#F3C969;
+    --used:#22142A; --used-ink:#3E2B47;
+    --panel:#24152E; --pumpkin:#F0843A; --blood:#D2444A; --moss:#9AAE55;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#170C1E; --ink:#EFE6D2; --muted:#B9A8BF;
+  --stone:#3B1F47; --stone-edge:#0E0613; --stone-ink:#F3C969;
+  --used:#22142A; --used-ink:#3E2B47;
+  --panel:#24152E; --pumpkin:#F0843A; --blood:#D2444A; --moss:#9AAE55;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Spectral,Georgia,"Times New Roman",serif;font-size:1.05rem;line-height:1.5}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{cursor:default}
+:focus-visible{outline:3px solid var(--pumpkin);outline-offset:3px}
+
+header{max-width:1200px;margin:0 auto;padding:1.5rem 1rem .5rem;display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:1rem}
+h1{font-family:"Pirata One",Georgia,serif;font-weight:400;font-size:clamp(2.6rem,7vw,4.8rem);line-height:.95;margin:0;color:var(--pumpkin);letter-spacing:.01em}
+.tools{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+.ghost{background:none;border:1.5px solid var(--muted);color:var(--ink);border-radius:999px;padding:.35rem .9rem;font-size:.9rem}
+.ghost:hover{border-color:var(--pumpkin)}
+.setinfo{color:var(--muted);font-size:.9rem;margin-right:.3rem}
+
+.board-wrap{max-width:1200px;margin:0 auto;padding:1rem;overflow-x:auto}
+.board{display:grid;gap:.9rem .7rem}
+.cat{font-family:"Pirata One",Georgia,serif;font-size:1.45rem;line-height:1.05;text-align:center;padding:0 .2rem .4rem;border-bottom:2px solid var(--moss);min-height:3.4rem;display:flex;align-items:end;justify-content:center}
+.tile{
+  aspect-ratio:4/3.4;border:none;
+  border-radius:48% 48% 6px 6px / 34% 34% 6px 6px;
+  background:var(--stone);color:var(--stone-ink);
+  box-shadow:inset 0 -6px 0 var(--stone-edge), 0 6px 0 -2px var(--moss);
+  font-family:"Pirata One",Georgia,serif;font-size:2.2rem;
+  display:grid;place-items:center;padding-top:.4rem;
+  transition:transform .15s ease, background .15s ease;
+}
+.tile:hover:not(:disabled){transform:translateY(-4px) rotate(-1deg);background:#4A2858}
+.tile:disabled{background:var(--used);color:var(--used-ink);box-shadow:inset 0 -6px 0 rgba(0,0,0,.06), 0 6px 0 -2px var(--moss);font-size:1.1rem;font-family:Spectral,Georgia,serif;font-weight:700;letter-spacing:.12em}
+
+.scores{max-width:1200px;margin:0 auto;padding:1rem 1rem 2.5rem;display:flex;flex-wrap:wrap;gap:.8rem;align-items:stretch}
+.team{background:var(--panel);border-radius:10px;padding:.7rem .8rem;min-width:170px;flex:1 1 170px;border-top:5px solid var(--pumpkin);position:relative}
+.team input{width:100%;background:transparent;border:none;border-bottom:1px dashed var(--muted);font-weight:600;padding:.1rem 1.4rem .1rem 0}
+.team .pts{font-family:"Pirata One",Georgia,serif;font-size:2.4rem;line-height:1.1;margin:.3rem 0}
+.team .pts.neg{color:var(--blood)}
+.team .adj{display:flex;gap:.4rem}
+.team .adj button{flex:1;border:1px solid var(--muted);background:none;border-radius:6px;padding:.15rem 0;font-size:.85rem}
+.team .rm{position:absolute;top:.45rem;right:.5rem;border:none;background:none;color:var(--muted);font-size:1.1rem;line-height:1;padding:.2rem}
+.add{border:2px dashed var(--muted);background:none;border-radius:10px;min-width:120px;color:var(--muted);font-weight:600}
+.add:hover{border-color:var(--pumpkin);color:var(--pumpkin)}
+.winner{max-width:1200px;margin:0 auto;padding:0 1rem;font-family:"Pirata One",Georgia,serif;font-size:1.8rem;color:var(--moss)}
+
+.veil{position:fixed;inset:0;background:rgba(14,6,19,.82);display:none;align-items:center;justify-content:center;padding:1rem;z-index:20}
+.veil.open{display:flex}
+.card{background:var(--panel);color:var(--ink);max-width:760px;width:100%;border-radius:14px;padding:clamp(1.2rem,4vw,2.4rem);max-height:90vh;overflow:auto}
+.card h2{font-family:"Pirata One",Georgia,serif;font-weight:400;font-size:clamp(2rem,5vw,2.8rem);line-height:1;margin:0 0 .6rem;color:var(--pumpkin)}
+.card h3{font-size:1rem;margin:1.2rem 0 .5rem;color:var(--muted)}
+.card .meta{color:var(--muted);font-weight:600;margin:0 0 .6rem}
+.card .q{font-size:clamp(1.4rem,3.4vw,2.1rem);line-height:1.3;margin:0 0 1.2rem;font-weight:600}
+.card .a{font-family:"Pirata One",Georgia,serif;font-size:clamp(1.8rem,4.5vw,2.8rem);color:var(--pumpkin);margin:0 0 1.2rem;line-height:1.1}
+.card .curse{font-family:"Pirata One",Georgia,serif;font-size:clamp(2.2rem,6vw,3.4rem);color:var(--blood);margin:0 0 .4rem;line-height:1}
+.row{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.6rem}
+.btn{border:none;border-radius:8px;padding:.6rem 1rem;font-weight:700;background:var(--stone);color:var(--stone-ink)}
+.btn:disabled{opacity:.45}
+.btn.ok{background:var(--moss);color:#fff}
+.btn.no{background:var(--blood);color:#fff}
+.btn.plain{background:none;border:1.5px solid var(--muted);color:var(--ink);font-weight:600}
+.award{display:grid;grid-template-columns:1fr auto auto;gap:.4rem .5rem;align-items:center;margin:.4rem 0 1rem}
+.award span{font-weight:600}
+label.wager{display:block;margin:.8rem 0 .3rem;font-weight:600}
+.card input[type=number],.card select{padding:.4rem .6rem;border-radius:6px;border:1.5px solid var(--muted);background:var(--bg);color:var(--ink)}
+
+.chips{display:flex;flex-wrap:wrap;gap:.5rem}
+.chip{border:1.5px solid var(--muted);background:none;border-radius:999px;padding:.4rem .95rem;font-weight:600}
+.chip[aria-pressed="true"]{background:var(--stone);border-color:var(--stone);color:var(--stone-ink)}
+.chip:disabled{opacity:.4}
+.count{font-weight:600;margin:1rem 0 0}
+
+@media (prefers-reduced-motion:reduce){.tile{transition:none}.tile:hover:not(:disabled){transform:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Spøgelses-Jeopardy</h1>
+  <div class="tools">
+    <span class="setinfo" id="setinfo"></span>
+    <button class="ghost" id="restart">Genstart runden</button>
+    <button class="ghost" id="newQs">Nye spørgsmål</button>
+    <button class="ghost" id="newGame">Nyt spil</button>
+  </div>
+</header>
+<div class="winner" id="winner" hidden></div>
+<main class="board-wrap"><div class="board" id="board"></div></main>
+<section class="scores" id="scores" aria-label="Hold og point"></section>
+
+<div class="veil" id="veil" role="dialog" aria-modal="true" aria-labelledby="mq">
+  <div class="card" id="card"></div>
+</div>
+
+<script>
+const VALUES=[100,200,300,400,500];
+const MIN_CATS=3, MAX_CATS=6;
+const POOL=[
+ {id:"film-gys",group:"Halloween",cat:"Gys på film",sets:[
+  [["Hvad hedder klovnen i Stephen Kings ”It”?", "Pennywise"], ["Hvad kaldes morderen med den hvide, skrigende maske i ”Scream”?", "Ghostface"], ["Hvad hedder dukken, der er besat af en seriemorder i ”Child’s Play”?", "Chucky"], ["Hvad hedder hotellet, hvor ”The Shining” foregår?", "Overlook Hotel"], ["Hvilken gyser fra 1999 er lavet som optagelser fundet efter tre studerende, der forsvandt i en skov?", "The Blair Witch Project"]],
+  [["Hvad hedder morderen med knivhandsken i ”A Nightmare on Elm Street”?", "Freddy Krueger"], ["Hvilken maske bærer Jason i ”Fredag den 13.”?", "En hockeymaske"], ["Hvem instruerede ”Psycho” fra 1960?", "Alfred Hitchcock"], ["I hvilken film fra 1973 bliver pigen Regan besat af en dæmon?", "Eksorcisten (The Exorcist)"], ["Hvilken gyser fra 2017 af Jordan Peele handler om en ung mand, der besøger kærestens familie for første gang?", "Get Out"]]]},
+ {id:"monstre",group:"Halloween",cat:"Monstre og myter",sets:[
+  [["Hvad skal ifølge folketroen holde vampyrer væk?", "Hvidløg"], ["Hvilken irsk forfatter skrev ”Dracula” i 1897?", "Bram Stoker"], ["Hvad hedder lægen, der skaber monsteret i Mary Shelleys roman?", "Victor Frankenstein"], ["I hvilken skotsk sø skulle et berømt monster angiveligt leve?", "Loch Ness"], ["Hvilken fyrste fra 1400-tallet, kaldet Spidderen, regnes som inspiration til Dracula?", "Vlad III (Vlad Țepeș)"]],
+  [["Hvornår forvandler en varulv sig?", "Ved fuldmåne"], ["Hvad hedder kæmpegorillaen, der klatrer op ad Empire State Building?", "King Kong"], ["Hvilket monster fra græsk mytologi har slanger i stedet for hår?", "Medusa"], ["Hvad hedder den trehovedede hund, der vogter underverdenen i græsk mytologi?", "Kerberos"], ["Hvad hedder det blodsugende væsen fra latinamerikansk folklore, der angriber geder?", "Chupacabra"]]]},
+ {id:"hw-historie",group:"Halloween",cat:"Halloweens historie",sets:[
+  [["Hvad kalder man et udskåret græskar med lys i på engelsk?", "Jack-o’-lantern"], ["Hvad skar man lygter ud af i Irland og Skotland, før græskarret tog over i USA?", "Roer (majroer/kålroer)"], ["I hvilket land fejrer man De Dødes Dag, Día de los Muertos, i starten af november?", "Mexico"], ["Hvad hedder den keltiske fest, som Halloween har sine rødder i?", "Samhain"], ["Hvad kalder man de pyntede kranier, ofte lavet af sukker, til Día de los Muertos?", "Calaveras"]],
+  [["Hvilken frugt prøver man at fange med munden i en balje vand i den klassiske Halloween-leg?", "Æbler"], ["Fra hvilket land tog immigranter Halloween-traditionen med til USA i 1800-tallet?", "Irland"], ["Hvilken berømt udbrydningskunstner døde på Halloween i 1926?", "Harry Houdini"], ["Hvad hedder dagen efter Allehelgensdag, hvor man mindes alle afdøde?", "Allesjælesdag (2. november)"], ["Hvilken radioudsendelse fik i 1938 lyttere til at tro, at marsboere invaderede USA?", "Klodernes kamp (The War of the Worlds) med Orson Welles"]]]},
+ {id:"godter",group:"Halloween",cat:"Græskar og godter",sets:[
+  [["Hvad siger børn i USA, når de banker på døren og beder om slik?", "Trick or treat"], ["Hvilke tre farver har det klassiske amerikanske Halloween-slik candy corn?", "Gul, orange og hvid"], ["Hvilken chokoladebar er opkaldt efter familien Mars’ yndlingshest?", "Snickers"], ["Hvilket stof i chokolade gør den giftig for hunde?", "Theobromin"], ["Hvad står navnet Haribo for?", "Hans Riegel, Bonn"]],
+  [["Hvad hedder ejeren af chokoladefabrikken i Roald Dahls bog?", "Willy Wonka"], ["Hvilken dansk slikproducent laver Ga-Jol og Guldbarren?", "Toms"], ["Hvilken dansk iværksætter grundlagde Lakrids by Bülow?", "Johan Bülow"], ["Hvilken plante udvinder man lakrids fra?", "Lakridsrod (roden af lakridsplanten)"], ["Hvad står de to M’er i M&M’s for?", "Mars og Murrie (Forrest Mars og Bruce Murrie)"]]]},
+ {id:"hekse",group:"Halloween",cat:"Hekse og trolddom",sets:[
+  [["Hvad hedder Harry Potters ugle?", "Hedvig"], ["Hvor mange hekse møder Macbeth i Shakespeares skuespil?", "Tre"], ["Hvad hedder byen i Massachusetts, der er berygtet for hekseprocesserne i 1692?", "Salem"], ["Hvilken film fra 1993 handler om de tre heksesøstre Sanderson?", "Hocus Pocus"], ["Hvad hedder heksen fra russiske eventyr, der bor i et hus på hønseben?", "Baba Jaga"]],
+  [["Hvad hedder havheksen i Disneys ”Den lille havfrue”?", "Ursula"], ["Hvilken aften brænder man en heks af på bålet i Danmark?", "Sankthansaften"], ["Hvad hedder den talende sorte kat i ”Sabrina – Teenage Witch”?", "Salem"], ["Hvilket bjerg flyver heksene til sankthansaften ifølge dansk tradition?", "Bloksbjerg"], ["Hvad hedder den berygtede håndbog i heksejagt fra 1486?", "Heksehammeren (Malleus Maleficarum)"]]]},
+ {id:"uhyg-vid",group:"Halloween",cat:"Uhyggelig videnskab",sets:[
+  [["Hvad hedder frygten for edderkopper?", "Arachnofobi"], ["Hvilket pattedyr lever udelukkende af blod?", "Vampyrflagermusen"], ["Hvad kaldes stivheden i musklerne, der indtræder nogle timer efter døden?", "Rigor mortis (dødsstivhed)"], ["Hvilket insekt kan leve i over en uge uden hoved?", "Kakerlakken"], ["Hvad hedder frygten for tallet 13?", "Triskaidekafobi"]],
+  [["Hvilket krybdyr kan smide halen og gro en ny?", "Firbenet"], ["Hvilken sort fugl kaldes en flok af på engelsk ”a murder”?", "Krager"], ["Hvor mange knogler har et voksent menneske?", "206"], ["Hvad hedder frygten for klovne?", "Coulrofobi"], ["Hvilke to ting siges at fortsætte med at vokse efter døden – selvom det er en myte?", "Hår og negle"]]]},
+ {id:"almen",group:"Blandet",cat:"Almen viden",sets:[
+  [["Hvem malede ”Mona Lisa”?", "Leonardo da Vinci"], ["Hvad er hovedstaden i Australien?", "Canberra"], ["Hvilket grundstof har det kemiske symbol Au?", "Guld"], ["Hvilket sprog har flest modersmålstalere i verden?", "Mandarin (kinesisk)"], ["Hvilken opfinder bag vekselstrømsmotoren har lagt navn til en bilproducent?", "Nikola Tesla"]],
+  [["Hvor mange farver har en regnbue traditionelt?", "Syv"], ["Hvilken planet kaldes den røde planet?", "Mars"], ["Hvilket grundstof har det kemiske symbol Na?", "Natrium"], ["Hvilket metal er flydende ved stuetemperatur?", "Kviksølv"], ["Hvem opdagede penicillin i 1928?", "Alexander Fleming"]]]},
+ {id:"film-serier",group:"Blandet",cat:"Film og serier",sets:[
+  [["Hvad hedder troldmandsskolen i Harry Potter?", "Hogwarts"], ["Hvilken serie handler om kemilæreren Walter White, der begynder at lave metamfetamin?", "Breaking Bad"], ["Hvad hedder den lille by, hvor ”Stranger Things” foregår?", "Hawkins"], ["Hvad hedder kontinentet i ”Game of Thrones”, hvor De Syv Kongeriger ligger?", "Westeros"], ["Hvilken dansk film af Thomas Vinterberg vandt Oscar for bedste internationale film i 2021?", "Druk"]],
+  [["Hvad hedder den gule familie fra Springfield?", "The Simpsons"], ["Hvilken skuespiller spiller Jack Sparrow i ”Pirates of the Caribbean”?", "Johnny Depp"], ["Hvad hedder caféen, hvor vennerne mødes i ”Friends”?", "Central Perk"], ["Hvilken dansk serie handler om statsminister Birgitte Nyborg?", "Borgen"], ["Hvilken film fra 1959 blev den første til at vinde 11 Oscars?", "Ben-Hur"]]]},
+ {id:"musik",group:"Blandet",cat:"Musik",sets:[
+  [["Hvilken dansk gruppe fik et verdenshit med ”Barbie Girl”?", "Aqua"], ["Hvem sang ”Thriller”?", "Michael Jackson"], ["Hvilken sangerinde hedder i virkeligheden Stefani Germanotta?", "Lady Gaga"], ["Hvilket svensk band vandt Melodi Grand Prix i 1974 med ”Waterloo”?", "ABBA"], ["Hvad hed Kim Larsens band i 1970’erne?", "Gasolin’"]],
+  [["Hvilken sangerinde står bag ”Shake It Off” og The Eras Tour?", "Taylor Swift"], ["Hvad hed forsangeren i Queen?", "Freddie Mercury"], ["Hvilken dansk duo vandt Melodi Grand Prix i 2000 med ”Fly on the Wings of Love”?", "Olsen Brothers"], ["Hvilket band udgav albummet ”The Dark Side of the Moon”?", "Pink Floyd"], ["Hvor mange symfonier skrev Beethoven?", "Ni"]]]},
+ {id:"geografi",group:"Blandet",cat:"Geografi",sets:[
+  [["Hvilket land har form som en støvle?", "Italien"], ["I hvilken by står Det Skæve Tårn?", "Pisa"], ["Hvilken kanal forbinder Atlanterhavet og Stillehavet?", "Panamakanalen"], ["Hvilken storby ligger på to kontinenter?", "Istanbul"], ["Hvilket land har flest tidszoner, når oversøiske områder tælles med?", "Frankrig (12)"]],
+  [["Hvad hedder verdens største varme ørken?", "Sahara"], ["I hvilket land ligger inkabyen Machu Picchu?", "Peru"], ["I hvilket land ligger Kilimanjaro?", "Tanzania"], ["Hvilket land er fuldstændig omgivet af Sydafrika?", "Lesotho"], ["Hvilket land har som det eneste et flag, der ikke er rektangulært?", "Nepal"]]]},
+ {id:"sport",group:"Blandet",cat:"Sport",sets:[
+  [["Hvilket år vandt Danmarks herrelandshold EM i fodbold?", "1992"], ["Hvilken dansk cykelrytter vandt Tour de France i både 2022 og 2023?", "Jonas Vingegaard"], ["I hvilken sport kan man lave en birdie, en eagle og en albatros?", "Golf"], ["Hvor langt er et maratonløb?", "42,195 km"], ["Hvilket land har vundet flest VM-titler i herrefodbold?", "Brasilien"]],
+  [["Hvor mange spillere har et håndboldhold på banen, inkl. målmand?", "Syv"], ["Hvilken sport dyrker Viktor Axelsen?", "Badminton"], ["I hvilken by blev de første moderne olympiske lege holdt i 1896?", "Athen"], ["Hvilken tennisspiller har vundet flest Grand Slam-titler i herresingle?", "Novak Djokovic"], ["Hvor mange point giver det højeste enkeltkast på en dartskive?", "60 (tredobbelt 20)"]]]},
+ {id:"mad",group:"Blandet",cat:"Mad og drikke",sets:[
+  [["Hvad er hovedingrediensen i guacamole?", "Avocado"], ["Fra hvilket land kommer fetaost?", "Grækenland"], ["Hvilken ost bruges traditionelt i tiramisu?", "Mascarpone"], ["Hvilken krydderurt giver sauce bearnaise sin karakteristiske smag?", "Estragon"], ["Hvilket krydderi er verdens dyreste målt på vægt?", "Safran"]],
+  [["Fra hvilket land stammer sushi?", "Japan"], ["Hvad er hovedingrediensen i hummus?", "Kikærter"], ["Hvilket land regnes for croissantens egentlige ophav?", "Østrig"], ["Hvilket krydderi giver karry sin gule farve?", "Gurkemeje"], ["Hvad er verdens mest dyrkede rødvinsdrue?", "Cabernet Sauvignon"]]]},
+ {id:"danmark",group:"Blandet",cat:"Danmark",sets:[
+  [["Hvem blev Danmarks konge i januar 2024?", "Frederik 10."], ["Hvilken by regnes for Danmarks ældste?", "Ribe"], ["Hvor mange regioner er Danmark inddelt i?", "Fem"], ["Hvilket år åbnede Storebæltsforbindelsen for biltrafik?", "1998"], ["Hvad hedder Danmarks længste å?", "Gudenåen"]],
+  [["Hvilket dansk firma opfandt de berømte plastikklodser?", "LEGO"], ["Hvilken dansk forfatter skrev ”Den grimme ælling”?", "H.C. Andersen"], ["Hvad er Danmarks største ø, når Grønland ikke tælles med?", "Sjælland"], ["Hvilket år blev Danmark medlem af EF?", "1973"], ["Hvilken dansk fysiker fik Nobelprisen i 1922 for sin atommodel?", "Niels Bohr"]]]},
+ {id:"natur",group:"Blandet",cat:"Natur og dyr",sets:[
+  [["Hvad er verdens største dyr?", "Blåhvalen"], ["Hvor mange hjerter har en blæksprutte?", "Tre"], ["Hvilken fugl er Danmarks nationalfugl?", "Knopsvanen"], ["Hvad kalder man en kængurueunge?", "En joey"], ["Nævn et af de to slags pattedyr, der lægger æg.", "Næbdyret eller myrepindsvinet"]],
+  [["Hvad er verdens hurtigste landdyr?", "Geparden"], ["Hvad er verdens største fugl?", "Strudsen"], ["Hvilken hval kaldes havets enhjørning?", "Narhvalen"], ["Hvilket dyr har verdens største øjne?", "Kæmpeblæksprutten"], ["Hvilket træ er Danmarks nationaltræ?", "Bøgen"]]]}
+];
+const DEFAULT_CATS=POOL.filter(p=>p.group==="Halloween").map(p=>p.id);
+const KEY="halloween-jeopardy-v4";
+const $=s=>document.querySelector(s);
+let state;
+
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function fresh(teams,catIds,set){
+  const c=catIds||DEFAULT_CATS;
+  return {teams:teams||[{n:"Hold 1",s:0},{n:"Hold 2",s:0},{n:"Hold 3",s:0}],cats:c,set:set||0,used:[],cursed:Math.floor(Math.random()*c.length*5)};
+}
+function setCount(){return Math.min(...cats().map(c=>c.sets.length));}
+function zeroTeams(){return state.teams.map(t=>({n:t.n,s:0}));}
+function load(){
+  try{const r=localStorage.getItem(KEY);if(r){const p=JSON.parse(r);if(p&&Array.isArray(p.teams)&&Array.isArray(p.cats)){p.set=p.set||0;return p;}}}catch(e){}
+  return fresh();
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+function esc(t){const d=document.createElement("div");d.textContent=t;return d.innerHTML;}
+function cats(){return state.cats.map(id=>POOL.find(p=>p.id===id)).filter(Boolean);}
+
+function renderBoard(){
+  const C=cats(),b=$("#board");b.innerHTML="";
+  b.style.gridTemplateColumns=`repeat(${C.length},minmax(130px,1fr))`;
+  b.style.minWidth=`${C.length*140}px`;
+  C.forEach(c=>{const h=document.createElement("div");h.className="cat";h.textContent=c.cat;b.appendChild(h);});
+  for(let r=0;r<5;r++){
+    for(let c=0;c<C.length;c++){
+      const i=c*5+r,used=state.used.includes(i);
+      const t=document.createElement("button");
+      t.className="tile";t.disabled=used;
+      t.textContent=used?"R.I.P.":VALUES[r];
+      t.setAttribute("aria-label",used?`${C[c].cat}, ${VALUES[r]} – brugt`:`${C[c].cat} til ${VALUES[r]}`);
+      t.onclick=()=>openTile(i);
+      b.appendChild(t);
+    }
+  }
+}
+function renderScores(){
+  const s=$("#scores");s.innerHTML="";
+  state.teams.forEach((t,k)=>{
+    const d=document.createElement("div");d.className="team";
+    d.innerHTML=`<input aria-label="Holdnavn" value="${esc(t.n)}">
+      <button class="rm" aria-label="Fjern ${esc(t.n)}" title="Fjern hold">×</button>
+      <div class="pts${t.s<0?" neg":""}">${t.s}</div>
+      <div class="adj"><button aria-label="Træk 100 fra">−100</button><button aria-label="Læg 100 til">+100</button></div>`;
+    d.querySelector("input").oninput=e=>{t.n=e.target.value;save();};
+    d.querySelector(".rm").onclick=()=>{
+      if(state.teams.length<=1)return;
+      ask(`Fjern ${t.n}?`,"Holdet og dets point forsvinder fra spillet.","Fjern hold",()=>{state.teams.splice(k,1);save();renderScores();});
+    };
+    const [m,p]=d.querySelectorAll(".adj button");
+    m.onclick=()=>{t.s-=100;save();renderScores();};
+    p.onclick=()=>{t.s+=100;save();renderScores();};
+    s.appendChild(d);
+  });
+  const a=document.createElement("button");a.className="add";a.textContent="+ Tilføj hold";
+  a.onclick=()=>{state.teams.push({n:`Hold ${state.teams.length+1}`,s:0});save();renderScores();};
+  s.appendChild(a);
+  renderWinner();
+}
+function renderWinner(){
+  const w=$("#winner");
+  if(state.used.length<cats().length*5){w.hidden=true;return;}
+  const max=Math.max(...state.teams.map(t=>t.s));
+  const best=state.teams.filter(t=>t.s===max).map(t=>t.n);
+  w.hidden=false;
+  w.textContent=best.length>1?`Uafgjort mellem ${best.join(" og ")} med ${max} point`:`${best[0]} vinder natten med ${max} point`;
+}
+function renderAll(){renderBoard();renderScores();$("#setinfo").textContent=`Spørgsmålssæt ${state.set+1} af ${setCount()}`;}
+
+function openVeil(){$("#veil").classList.add("open");}
+function closeVeil(){$("#veil").classList.remove("open");}
+
+function ask(title,text,okLabel,onOk){
+  const card=$("#card");openVeil();
+  card.innerHTML=`<h2 id="mq">${esc(title)}</h2><p>${esc(text)}</p>
+    <div class="row"><button class="btn" id="askOk">${esc(okLabel)}</button><button class="btn plain" id="askNo">Annullér</button></div>`;
+  $("#askOk").onclick=()=>{closeVeil();onOk();};
+  $("#askNo").onclick=closeVeil;
+  $("#askOk").focus();
+}
+
+function openPicker(){
+  let sel=[...state.cats];
+  const card=$("#card");openVeil();
+  const groups=[...new Set(POOL.map(p=>p.group))];
+  const draw=()=>{
+    let html=`<h2 id="mq">Nyt spil</h2><p>Vælg ${MIN_CATS} til ${MAX_CATS} kategorier. Holdnavne beholdes, point nulstilles.</p>`;
+    groups.forEach(g=>{
+      html+=`<h3>${esc(g)}</h3><div class="chips">`;
+      POOL.filter(p=>p.group===g).forEach(p=>{
+        const on=sel.includes(p.id);
+        html+=`<button class="chip" data-id="${p.id}" aria-pressed="${on}" ${!on&&sel.length>=MAX_CATS?"disabled":""}>${esc(p.cat)}</button>`;
+      });
+      html+=`</div>`;
+    });
+    html+=`<p class="count">${sel.length} af ${MAX_CATS} valgt</p>
+      <div class="row">
+        <button class="btn" id="startNew" ${sel.length<MIN_CATS?"disabled":""}>Start spillet</button>
+        <button class="btn plain" id="randomSix">Vælg 6 tilfældige</button>
+        <button class="btn plain" id="pickNo">Annullér</button>
+      </div>`;
+    card.innerHTML=html;
+    card.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{
+      const id=b.dataset.id;
+      sel=sel.includes(id)?sel.filter(x=>x!==id):[...sel,id];
+      draw();
+      const again=card.querySelector(`.chip[data-id="${id}"]`);if(again)again.focus();
+    });
+    $("#randomSix").onclick=()=>{sel=shuffle(POOL.map(p=>p.id)).slice(0,MAX_CATS);draw();};
+    $("#pickNo").onclick=closeVeil;
+    $("#startNew").onclick=()=>{
+      const ordered=POOL.map(p=>p.id).filter(id=>sel.includes(id));
+      state=fresh(zeroTeams(),ordered,0);
+      save();closeVeil();renderAll();
+    };
+  };
+  draw();
+  const first=card.querySelector(".chip");if(first)first.focus();
+}
+
+function finish(i){
+  if(!state.used.includes(i))state.used.push(i);
+  save();closeVeil();renderAll();
+}
+function openTile(i){
+  const C=cats(),c=Math.floor(i/5),r=i%5,[q,a]=C[c].sets[state.set%C[c].sets.length][r],val=VALUES[r];
+  const card=$("#card");openVeil();
+  const meta=`<p class="meta">${esc(C[c].cat)} · ${val}</p>`;
+
+  const showQuestion=(wagerTeam,wager)=>{
+    card.innerHTML=`${meta}<p class="q" id="mq">${esc(q)}</p>
+      <div class="row"><button class="btn" id="reveal">Vis svar</button><button class="btn plain" id="back">Tilbage til brættet</button></div>`;
+    $("#back").onclick=closeVeil;
+    $("#reveal").onclick=()=>showAnswer(wagerTeam,wager);
+    $("#reveal").focus();
+  };
+  const showAnswer=(wagerTeam,wager)=>{
+    let rows="";
+    const list=wagerTeam!=null?[wagerTeam]:state.teams.map((_,k)=>k);
+    const pts=wager!=null?wager:val;
+    list.forEach(k=>{rows+=`<span>${esc(state.teams[k].n)}</span>
+      <button class="btn ok" data-k="${k}" data-d="1">Rigtigt +${pts}</button>
+      <button class="btn no" data-k="${k}" data-d="-1">Forkert −${pts}</button>`;});
+    card.innerHTML=`${meta}<p class="q" id="mq">${esc(q)}</p><p class="a">${esc(a)}</p>
+      <div class="award">${rows}</div>
+      <div class="row"><button class="btn plain" id="done">Ingen point – luk</button></div>`;
+    card.querySelectorAll(".award button").forEach(b=>{
+      b.onclick=()=>{
+        const t=state.teams[+b.dataset.k];t.s+=pts*(+b.dataset.d);
+        if(b.dataset.d==="1"||wagerTeam!=null)finish(i);
+        else{b.disabled=true;b.textContent=`Forkert −${pts} ✓`;save();renderScores();}
+      };
+    });
+    $("#done").onclick=()=>finish(i);
+  };
+
+  if(i===state.cursed){
+    const opts=state.teams.map((t,k)=>`<option value="${k}">${esc(t.n)}</option>`).join("");
+    card.innerHTML=`${meta}<p class="curse" id="mq">Forbandet felt!</p>
+      <p>Kun holdet, der valgte feltet, må svare. Sæt jeres indsats, før I ser spørgsmålet.</p>
+      <label class="wager" for="wt">Hold</label><select id="wt">${opts}</select>
+      <label class="wager" for="wv">Indsats</label><input type="number" id="wv" min="0" step="50" value="${val}">
+      <p class="meta" id="wmax"></p>
+      <div class="row"><button class="btn" id="go">Vis spørgsmålet</button></div>`;
+    const upd=()=>{const s=state.teams[+$("#wt").value].s;const max=Math.max(s,500);$("#wv").max=max;$("#wmax").textContent=`Højst ${max} point`;};
+    $("#wt").onchange=upd;upd();
+    $("#go").onclick=()=>{
+      const k=+$("#wt").value,max=+$("#wv").max;
+      let w=Math.round(+$("#wv").value||0);w=Math.max(0,Math.min(w,max));
+      showQuestion(k,w);
+    };
+    $("#go").focus();
+  }else showQuestion(null,null);
+}
+
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("#veil").classList.contains("open"))closeVeil();});
+$("#veil").addEventListener("click",e=>{if(e.target.id==="veil")closeVeil();});
+$("#restart").onclick=()=>ask("Genstart runden?","Samme kategorier og spørgsmål. Alle point nulstilles, og det forbandede felt flyttes.","Genstart",()=>{
+  state=fresh(zeroTeams(),state.cats,state.set);save();renderAll();
+});
+$("#newQs").onclick=()=>{
+  const next=(state.set+1)%setCount();
+  ask("Nye spørgsmål?",`Samme kategorier med spørgsmålssæt ${next+1}. Alle point nulstilles.`,"Skift spørgsmål",()=>{
+    state=fresh(zeroTeams(),state.cats,next);save();renderAll();
+  });
+};
+$("#newGame").onclick=openPicker;
+
+state=load();renderAll();
+</script>
+</body>
+</html>
